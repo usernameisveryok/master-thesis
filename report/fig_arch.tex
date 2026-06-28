@@ -1,0 +1,55 @@
+% 系统体系结构图(TikZ)。依赖主文件已定义颜色 thupurple/thublue 与 tikz 库。
+\begin{figure}[htbp]
+  \centering
+  \resizebox{\textwidth}{!}{%
+  \begin{tikzpicture}[font=\small, node distance=0.62cm and 0.7cm,
+     box/.style={rectangle, rounded corners=3pt, draw=thupurple, line width=0.8pt,
+                 fill=thupurple!8, align=center, text width=2.55cm, minimum height=1.05cm, inner sep=3pt},
+     wide/.style={rectangle, rounded corners=3pt, draw=thupurple, line width=0.8pt,
+                 fill=thupurple!8, align=center, text width=6.4cm, minimum height=1.05cm},
+     side/.style={rectangle, rounded corners=3pt, draw=thublue, line width=0.8pt,
+                 fill=thublue!8, align=center, text width=3.0cm, minimum height=1.1cm},
+     lbl/.style={text=thupurple!85, font=\footnotesize\bfseries, align=center, rotate=90},
+     arr/.style={-{Stealth[length=2.6mm]}, line width=0.9pt, draw=thupurple!85},
+     barr/.style={-{Stealth[length=2.6mm]}, line width=0.9pt, draw=thublue!80, dashed}]
+   % ===== 智能体层 =====
+   \node[box] (synth) {进化式 eBPF 合成器\\[1pt]\scriptsize LLM 生成/改写 C 代码};
+   \node[box, left=of synth] (explore) {攻击面探索器\\[1pt]\scriptsize 新颖性/覆盖度};
+   \node[box, right=of synth] (reflect) {反思迭代器\\[1pt]\scriptsize Reflexion/Self-Debug};
+   \node[lbl, left=0.35cm of explore] {智能体层};
+   % ===== 可信加载闭环层 =====
+   \node[box, below=1.25cm of explore] (compile) {clang 编译\\[1pt]\scriptsize $\to$ BPF 字节码};
+   \node[box, right=of compile] (verifier) {内核 verifier\\[1pt]\scriptsize 内存安全·有界·终止};
+   \node[box, right=of verifier] (sandbox) {隔离沙箱\\[1pt]\scriptsize 攻击流量对抗评估};
+   \node[box, right=of sandbox] (rollback) {自动回滚\\[1pt]\scriptsize 异常即撤回};
+   \node[lbl, left=0.35cm of compile] {可信闭环};
+   % ===== 内核数据面层 =====
+   \node[wide, below=1.25cm of compile.south west, anchor=north west] (tail)
+        {内核数据面(XDP):tail-call 防御链\\[1pt]\scriptsize 过滤器 $f_0 \to f_1 \to \cdots \to$ \texttt{XDP\_PASS}\;/\;\texttt{XDP\_DROP}};
+   \node[box, right=of tail] (tele) {连接追踪\\与遥测\\[1pt]\scriptsize 检出/误报/时延};
+   \node[lbl, left=0.35cm of tail] {内核 XDP};
+   % ===== 右侧:防御库 + 靶场 =====
+   \node[side, right=1.0cm of reflect] (archive) {防御库\\(MAP-Elites 档案)\\[1pt]\scriptsize 多样化精英防御};
+   \node[side, below=2.4cm of archive] (range) {攻防靶场 / 红队\\[1pt]\scriptsize 课题组 PMTUD/NAT/IPID 攻击};
+   % ===== 数据流 =====
+   \draw[arr] (explore) -- (synth);
+   \draw[arr] (synth) -- (reflect);
+   \draw[arr] (synth.south) -- (compile.north) node[midway,right=1pt,font=\scriptsize,text=thupurple!75]{候选 eBPF};
+   \draw[arr] (compile) -- (verifier);
+   \draw[arr] (verifier) -- (sandbox);
+   \draw[arr] (sandbox) -- (rollback);
+   \draw[arr] (sandbox.south) -- (tail.north) node[midway,right=1pt,font=\scriptsize,text=thupurple!75]{热加载};
+   % 反馈回路(数据面 -> 智能体,走最左)
+   \draw[arr] (tele.east) -- ++(0.5,0) |- (reflect.east);
+   \draw[arr, draw=thupurple!70] (tail.west) -- ++(-1.5,0) |- (explore.west)
+        node[pos=0.25,left=1pt,font=\scriptsize,text=thupurple!75]{遥测反馈};
+   % 档案与合成器互通
+   \draw[barr] (archive.west) -- (reflect.east);
+   \draw[barr] (synth.north) .. controls +(0,0.8) and +(-1.2,0) .. (archive.north west)
+        node[pos=0.6,above,font=\scriptsize,text=thublue!75]{采样父代 / 沉淀精英};
+   % 靶场喂攻击样本
+   \draw[barr] (range.west) -- ++(-0.5,0) |- (explore.east) node[pos=0.75,above,font=\scriptsize,text=thublue!75]{攻击样本};
+  \end{tikzpicture}}
+  \caption{自进化 eBPF 网络入侵防御系统总体架构:编码智能体在“探索—合成—可信验证—部署反馈—档案”闭环中维护内核防御库。}
+  \label{fig:arch}
+\end{figure}

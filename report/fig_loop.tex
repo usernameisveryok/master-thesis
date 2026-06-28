@@ -1,0 +1,33 @@
+% Defensive-Evolution 闭环图(TikZ)。依赖主文件已定义颜色 thupurple 与 tikz 库。
+\begin{figure}[htbp]
+  \centering
+  \resizebox{0.99\textwidth}{!}{%
+  \begin{tikzpicture}[font=\small,
+     stage/.style={rectangle, rounded corners=4pt, draw=thupurple, line width=0.9pt,
+                   fill=thupurple!8, align=center, text width=2.75cm, minimum height=1.55cm},
+     arr/.style={-{Stealth[length=3mm]}, line width=1.0pt, draw=thupurple!85}]
+   \node[stage] (s1) {\textbf{①攻击面探索}\\[2pt]\scriptsize 新颖性/覆盖度驱动};
+   \node[stage, right=1.05cm of s1] (s2) {\textbf{②防御合成}\\[2pt]\scriptsize LLM 作进化算子};
+   \node[stage, right=1.05cm of s2] (s3) {\textbf{③可信验证}\\[2pt]\scriptsize 编译·verifier·沙箱};
+   \node[stage, right=1.05cm of s3] (s4) {\textbf{④部署与反馈}\\[2pt]\scriptsize XDP 热加载·遥测};
+   \node[stage, right=1.05cm of s4] (s5) {\textbf{⑤档案更新}\\[2pt]\scriptsize 质量\,$\times$\,新颖性};
+   \draw[arr] (s1) -- (s2);
+   \draw[arr] (s2) -- (s3);
+   \draw[arr] (s3) -- (s4);
+   \draw[arr] (s4) -- (s5);
+   % 内含自修正小回路(验证失败 -> 合成)
+   \draw[arr, dashed, draw=thupurple!60] (s3.north) .. controls +(0,0.9) and +(0,0.9) .. (s2.north)
+        node[midway, above, font=\scriptsize, text=thupurple!80] {verifier 失败 $\to$ Self-Debug 自修正};
+   % 总反馈回路(s5 -> s1)
+   \draw[arr] (s5.south) -- ++(0,-1.0)
+        -| node[pos=0.25, below, font=\scriptsize, text=thupurple] {运行时反馈 / 新颖性回灌(非梯度迭代,持续开放式进化)} (s1.south);
+   % 方法注脚
+   \node[font=\scriptsize, text=black!55, below=0.05cm of s1, text width=2.8cm, align=center] {ICM\,/\,RND\\覆盖率缺口};
+   \node[font=\scriptsize, text=black!55, below=0.05cm of s2, text width=2.8cm, align=center] {FunSearch\\AlphaEvolve\,/\,EoH};
+   \node[font=\scriptsize, text=black!55, below=0.05cm of s3, text width=2.8cm, align=center] {内核 verifier\\隔离沙箱};
+   \node[font=\scriptsize, text=black!55, below=0.05cm of s4, text width=2.8cm, align=center] {tail-call\\遥测/回滚};
+   \node[font=\scriptsize, text=black!55, below=0.05cm of s5, text width=2.8cm, align=center] {MAP-Elites\\Go-Explore};
+  \end{tikzpicture}}
+  \caption{防御演化(Defensive Evolution)闭环:以非梯度方式持续进化内核 eBPF 防御。}
+  \label{fig:loop}
+\end{figure}

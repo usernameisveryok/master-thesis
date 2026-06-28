@@ -1,0 +1,351 @@
+% ============================================================================
+% 参考文献库 — 硕士选题报告《基于大模型编码智能体的自进化 eBPF 网络入侵防御系统》
+% 导师:徐恪 教授  作者:李兆曦(清华大学计算机科学与技术系)
+% 说明:条目均经会议官网 / DBLP / arXiv / RFC Editor 多源核实;少数次要字段标 note=待核实。
+% ============================================================================
+
+% ----------------------------------------------------------------------------
+% A. 网络协议攻击与侧信道(含本课题组 / 作者自引)
+% ----------------------------------------------------------------------------
+@inproceedings{gilad2012offpath,
+  author    = {Yossi Gilad and Amir Herzberg},
+  title     = {Off-Path Attacking the Web},
+  booktitle = {6th USENIX Workshop on Offensive Technologies (WOOT)},
+  year      = {2012}
+}
+@inproceedings{cao2016offpath,
+  author    = {Yue Cao and Zhongjie Wang and Zhiyun Qian and Chengyu Song and Srikanth V. Krishnamurthy and Paul Yu},
+  title     = {Off-Path {TCP} Exploits: Global Rate Limit Considered Dangerous},
+  booktitle = {25th USENIX Security Symposium},
+  pages     = {209--225}, year = {2016}, note = {CVE-2016-5696}
+}
+@inproceedings{feng2020mixedipid,
+  author    = {Xuewei Feng and Chuanpu Fu and Qi Li and Kun Sun and Ke Xu},
+  title     = {Off-Path {TCP} Exploits of the Mixed {IPID} Assignment},
+  booktitle = {Proc. 2020 ACM SIGSAC Conf. on Computer and Communications Security (CCS)},
+  pages     = {1323--1335}, year = {2020}, doi = {10.1145/3372297.3417884}
+}
+@article{feng2022downgradedipid,
+  author    = {Xuewei Feng and Qi Li and Kun Sun and Chuanpu Fu and Ke Xu},
+  title     = {Off-Path {TCP} Hijacking Attacks via the Side Channel of Downgraded {IPID}},
+  journal   = {IEEE/ACM Transactions on Networking},
+  volume    = {30}, number = {1}, pages = {409--422}, year = {2022}, doi = {10.1109/TNET.2021.3115517}
+}
+@inproceedings{feng2022pmtud,
+  author    = {Xuewei Feng and Qi Li and Kun Sun and Ke Xu and Baojun Liu and Xiaofeng Zheng and Qiushi Yang and Haixin Duan and Zhiyun Qian},
+  title     = {{PMTUD} is not Panacea: Revisiting {IP} Fragmentation Attacks against {TCP}},
+  booktitle = {29th Network and Distributed System Security Symposium (NDSS)},
+  year      = {2022}, doi = {10.14722/ndss.2022.24381}
+}
+@inproceedings{feng2022icmpredirect,
+  author    = {Xuewei Feng and Qi Li and Kun Sun and Zhiyun Qian and Gang Zhao and Xiaohui Kuang and Chuanpu Fu and Ke Xu},
+  title     = {Off-Path Network Traffic Manipulation via Revitalized {ICMP} Redirect Attacks},
+  booktitle = {31st USENIX Security Symposium}, pages = {2619--2636}, year = {2022}
+}
+@inproceedings{feng2023mitmwpa,
+  author    = {Xuewei Feng and Qi Li and Kun Sun and Yuxiang Yang and Ke Xu},
+  title     = {Man-in-the-Middle Attacks without Rogue {AP}: When {WPAs} Meet {ICMP} Redirects},
+  booktitle = {2023 IEEE Symposium on Security and Privacy (SP)}, year = {2023}
+}
+@inproceedings{yang2024natwifi,
+  author    = {Yuxiang Yang and Xuewei Feng and Qi Li and Kun Sun and Ziqiang Wang and Ke Xu},
+  title     = {Exploiting Sequence Number Leakage: {TCP} Hijacking in {NAT}-Enabled {Wi-Fi} Networks},
+  booktitle = {31st Network and Distributed System Security Symposium (NDSS)}, year = {2024}
+}
+@inproceedings{wang2025packetsize,
+  author    = {Ziqiang Wang and Xuewei Feng and Qi Li and Kun Sun and Yuxiang Yang and Mengyuan Li and Ganqiu Du and Ke Xu and Jianping Wu},
+  title     = {Off-Path {TCP} Hijacking in {Wi-Fi} Networks: A Packet-Size Side Channel Attack},
+  booktitle = {32nd Network and Distributed System Security Symposium (NDSS)}, year = {2025}
+}
+@inproceedings{feng2025redan,
+  author    = {Xuewei Feng and Yuxiang Yang and Qi Li and Kun Sun and Ziqiang Wang and Ganqiu Du and Ke Xu and Jianping Wu},
+  title     = {{ReDAN}: An Empirical Study on Remote {DoS} Attacks against {NAT} Networks},
+  booktitle = {32nd Network and Distributed System Security Symposium (NDSS)}, year = {2025}, note = {作者次序待核实}
+}
+@article{feng2025cacm,
+  author    = {Xuewei Feng and Qi Li and Kun Sun and Ke Xu and Jianping Wu},
+  title     = {Exploiting Cross-Layer Vulnerabilities: Off-Path Attacks on the {TCP/IP} Protocol Suite},
+  journal   = {Communications of the ACM}, volume = {68}, number = {3}, pages = {48--59}, year = {2025}, doi = {10.1145/3689819}
+}
+@inproceedings{feng2025pmtudisolation,
+  author    = {Xuewei Feng and Zhaoxi Li and Qi Li and Ziqiang Wang and Kun Sun and Ke Xu},
+  title     = {Off-Path {TCP} Exploits: {PMTUD} Breaks {TCP} Connection Isolation in {IP} Address Sharing Scenarios},
+  booktitle = {Proc. 2025 ACM SIGSAC Conf. on Computer and Communications Security (CCS)},
+  year      = {2025}, doi = {10.1145/3719027.3744888}, note = {arXiv:2509.11833}
+}
+@inproceedings{man2020saddns,
+  author    = {Keyu Man and Zhiyun Qian and Zhongjie Wang and Xiaofeng Zheng and Youjun Huang and Haixin Duan},
+  title     = {{DNS} Cache Poisoning Attack Reloaded: Revolutions with Side Channels},
+  booktitle = {Proc. 2020 ACM SIGSAC Conf. on Computer and Communications Security (CCS)},
+  pages     = {1337--1350}, year = {2020}, doi = {10.1145/3372297.3417280}
+}
+@inproceedings{man2021saddns2,
+  author    = {Keyu Man and Xin'an Zhou and Zhiyun Qian},
+  title     = {{DNS} Cache Poisoning Attack: Resurrections with Side Channels},
+  booktitle = {Proc. 2021 ACM SIGSAC Conf. on Computer and Communications Security (CCS)},
+  pages     = {3400--3414}, year = {2021}, doi = {10.1145/3460120.3486219}
+}
+@inproceedings{pan2024tcpspoofing,
+  author    = {Yepeng Pan and Christian Rossow},
+  title     = {{TCP} Spoofing: Reliable Payload Transmission Past the Spoofed {TCP} Handshake},
+  booktitle = {2024 IEEE Symposium on Security and Privacy (SP)}, year = {2024}
+}
+
+% ----------------------------------------------------------------------------
+% B. 协议攻击的防御 / 检测(标准 + 系统化检测)
+% ----------------------------------------------------------------------------
+@misc{rfc5961, author = {A. Ramaiah and R. Stewart and M. Dalal},
+  title = {Improving {TCP}'s Robustness to Blind In-Window Attacks}, howpublished = {RFC 5961, IETF}, year = {2010}}
+@misc{rfc6056, author = {M. Larsen and F. Gont},
+  title = {Recommendations for Transport-Protocol Port Randomization}, howpublished = {RFC 6056 (BCP 156), IETF}, year = {2011}}
+@misc{rfc2827, author = {P. Ferguson and D. Senie},
+  title = {Network Ingress Filtering: Defeating Denial of Service Attacks which employ {IP} Source Address Spoofing},
+  howpublished = {RFC 2827 (BCP 38), IETF}, year = {2000}}
+@inproceedings{cao2019scent,
+  author    = {Yue Cao and Zhongjie Wang and Zhiyun Qian and Chengyu Song and Srikanth V. Krishnamurthy and Paul Yu},
+  title     = {Principled Unearthing of {TCP} Side Channel Vulnerabilities},
+  booktitle = {Proc. 2019 ACM SIGSAC Conf. on Computer and Communications Security (CCS)},
+  pages     = {211--224}, year = {2019}, doi = {10.1145/3319535.3354250}
+}
+@inproceedings{man2024scad,
+  author    = {Keyu Man and Zhongjie Wang and Yu Hao and Shenghan Zheng and Xin'an Zhou and Yue Cao and Zhiyun Qian},
+  title     = {{SCAD}: Towards a Universal and Automated Network Side-Channel Vulnerability Detection},
+  booktitle = {33rd USENIX Security Symposium}, year = {2024}
+}
+@article{li2025stateshield,
+  author    = {Haibin Li and Qi Li and Yingying Su and Xuewei Feng and Chuanpu Fu and Ke Xu},
+  title     = {{StateShield}: Real-Time Defenses Against Information Leakage over Connectionless Protocols},
+  journal   = {IEEE/ACM Transactions on Networking}, year = {2025}, note = {卷期/DOI 待核实}
+}
+
+% ----------------------------------------------------------------------------
+% C. eBPF 网络安全与运行时防御 / 验证
+% ----------------------------------------------------------------------------
+@misc{shirokov2018katran,
+  author = {Nikita Shirokov and Ranjeeth Dasineni}, title = {Open-sourcing {Katran}, a Scalable Network Load Balancer},
+  howpublished = {Meta Engineering Blog}, year = {2018}}
+@misc{fabre2018l4drop,
+  author = {Arthur Fabre and Marek Majkowski}, title = {{L4Drop}: {XDP} {DDoS} Mitigations},
+  howpublished = {The Cloudflare Blog}, year = {2018}}
+@article{miano2019bpfiptables,
+  author    = {Sebastiano Miano and Matteo Bertrone and Fulvio Risso and Massimo Tumolo and Mauricio V\'asquez Bernal},
+  title     = {Securing {Linux} with a Faster and Scalable Iptables},
+  journal   = {ACM SIGCOMM Computer Communication Review}, volume = {49}, number = {3}, year = {2019}, doi = {10.1145/3371927.3371929}
+}
+@inproceedings{gershuni2019prevail,
+  author    = {Elazar Gershuni and Nadav Amit and Arie Gurfinkel and Nina Narodytska and Jorge A. Navas and Noam Rinetzky and Leonid Ryzhyk and Mooly Sagiv},
+  title     = {Simple and Precise Static Analysis of Untrusted {Linux} Kernel Extensions},
+  booktitle = {Proc. 40th ACM SIGPLAN Conf. on Programming Language Design and Implementation (PLDI)},
+  pages     = {1069--1084}, year = {2019}, doi = {10.1145/3314221.3314590}
+}
+@inproceedings{vishwanathan2022tnum,
+  author    = {Harishankar Vishwanathan and Matan Shachnai and Srinivas Narayana and Santosh Nagarakatte},
+  title     = {Sound, Precise, and Fast Abstract Interpretation with Tristate Numbers},
+  booktitle = {2022 IEEE/ACM Int. Symp. on Code Generation and Optimization (CGO)}, pages = {254--265}, year = {2022}, doi = {10.1109/CGO53902.2022.9741267}
+}
+@inproceedings{vishwanathan2023agni,
+  author    = {Harishankar Vishwanathan and Matan Shachnai and Srinivas Narayana and Santosh Nagarakatte},
+  title     = {Verifying the Verifier: {eBPF} Range Analysis Verification},
+  booktitle = {Computer Aided Verification (CAV)}, series = {LNCS}, pages = {226--251}, year = {2023}, doi = {10.1007/978-3-031-37709-9_12}
+}
+@inproceedings{sun2024stateembedding,
+  author    = {Hao Sun and Zhendong Su},
+  title     = {Validating the {eBPF} Verifier via State Embedding},
+  booktitle = {18th USENIX Symp. on Operating Systems Design and Implementation (OSDI)}, pages = {615--628}, year = {2024}
+}
+@inproceedings{xu2021k2,
+  author    = {Qiongwen Xu and Michael D. Wong and Tanvi Wagle and Srinivas Narayana and Anirudh Sivaraman},
+  title     = {Synthesizing Safe and Efficient Kernel Extensions for Packet Processing},
+  booktitle = {Proc. 2021 ACM SIGCOMM Conference}, year = {2021}, doi = {10.1145/3452296.3472929}
+}
+@inproceedings{nelson2020jitterbug,
+  author    = {Luke Nelson and Jacob Van Geffen and Emina Torlak and Xi Wang},
+  title     = {Specification and Verification in the Field: Applying Formal Methods to {BPF} Just-in-Time Compilers in the {Linux} Kernel},
+  booktitle = {14th USENIX Symp. on Operating Systems Design and Implementation (OSDI)}, year = {2020}
+}
+@inproceedings{he2023crosscontainer,
+  author    = {Yi He and Roland Guo and Yunlong Xing and Xijia Che and Kun Sun and Zhuotao Liu and Ke Xu and Qi Li},
+  title     = {Cross Container Attacks: The Bewildered {eBPF} on Clouds},
+  booktitle = {32nd USENIX Security Symposium}, pages = {5971--5988}, year = {2023}
+}
+@inproceedings{jin2023epf,
+  author    = {Di Jin and Vaggelis Atlidakis and Vasileios P. Kemerlis},
+  title     = {{EPF}: Evil Packet Filter},
+  booktitle = {2023 USENIX Annual Technical Conference (ATC)}, pages = {735--751}, year = {2023}
+}
+@misc{graf2020cilium,
+  author = {Thomas Graf}, title = {{eBPF} -- The Future of Networking and Security}, howpublished = {Cilium / Isovalent Blog}, year = {2020}}
+@misc{falco2018,
+  author = {{The Falco Authors}}, title = {Falco: Cloud Native Runtime Security}, howpublished = {CNCF Project}, year = {2018}}
+@misc{tetragon2022,
+  author = {{Isovalent}}, title = {Tetragon: {eBPF}-based Security Observability and Runtime Enforcement}, howpublished = {Isovalent / CNCF}, year = {2022}}
+
+% ----------------------------------------------------------------------------
+% D. LLM / 编码智能体用于安全(含最直接 baseline:KEN/Kgent)
+% ----------------------------------------------------------------------------
+@inproceedings{yang2024kgent,
+  author    = {Yiwei Yang and Yusheng Zheng and Maolin Chen and Andrew Quinn},
+  title     = {{Kgent}: Kernel Extensions Large Language Model Agent},
+  booktitle = {Proc. ACM SIGCOMM 2024 Workshop on eBPF and Kernel Extensions}, pages = {30--36}, year = {2024}, doi = {10.1145/3672197.3673434}
+}
+
+%% --- 通用编码智能体(工程载体) ---
+@inproceedings{yang2024sweagent,
+  author    = {John Yang and Carlos E. Jimenez and Alexander Wettig and Kilian Lieret and Shunyu Yao and Karthik Narayanan and Ofir Press},
+  title     = {{SWE-agent}: Agent-Computer Interfaces Enable Automated Software Engineering},
+  booktitle = {Advances in Neural Information Processing Systems (NeurIPS)}, year = {2024}, note = {arXiv:2405.15793}
+}
+@inproceedings{wang2024openhands,
+  author    = {Xingyao Wang and Boxuan Li and Yufan Song and Frank F. Xu and others and Graham Neubig and Heng Ji},
+  title     = {{OpenHands}: An Open Platform for {AI} Software Developers as Generalist Agents},
+  booktitle = {International Conference on Learning Representations (ICLR)}, year = {2025}, note = {arXiv:2407.16741}
+}
+@misc{anthropic2025claudecode,
+  author = {{Anthropic}}, title = {Claude Code: Agentic Coding in the Terminal}, howpublished = {\url{https://www.anthropic.com/claude-code}}, year = {2025}}
+@misc{cursor2024,
+  author = {{Anysphere}}, title = {Cursor: The {AI} Code Editor}, howpublished = {\url{https://www.cursor.com}}, year = {2024}}
+@misc{openai2025codexcli,
+  author = {{OpenAI}}, title = {{Codex CLI}: A Lightweight Coding Agent for the Terminal}, howpublished = {\url{https://github.com/openai/codex}}, year = {2025}}
+@misc{cognition2024devin,
+  author = {{Cognition AI}}, title = {Devin: An {AI} Software Engineer}, howpublished = {\url{https://www.cognition.ai/blog/introducing-devin}}, year = {2024}}
+@article{zhang2024aprsurvey,
+  author  = {Quanjun Zhang and Chunrong Fang and Yang Xie and Yuxiang Ma and others},
+  title   = {A Systematic Literature Review on Large Language Models for Automated Program Repair},
+  journal = {ACM Transactions on Software Engineering and Methodology (TOSEM)}, year = {2024}, note = {arXiv:2405.01466}
+}
+@inproceedings{deng2024pentestgpt,
+  author    = {Gelei Deng and Yi Liu and V\'ictor Mayoral-Vilches and Peng Liu and Yuekang Li and Yuan Xu and Tianwei Zhang and Yang Liu and Martin Pinzger and Stefan Rass},
+  title     = {{PentestGPT}: Evaluating and Harnessing Large Language Models for Automated Penetration Testing},
+  booktitle = {33rd USENIX Security Symposium}, pages = {847--864}, year = {2024}
+}
+@article{fang2024oneday,
+  author  = {Richard Fang and Rohan Bindu and Akul Gupta and Qiusi Zhan and Daniel Kang},
+  title   = {{LLM} Agents can Autonomously Exploit One-day Vulnerabilities},
+  journal = {arXiv preprint arXiv:2404.08144}, year = {2024}
+}
+@article{bhatt2023cyberseceval,
+  author  = {Manish Bhatt and Sahana Chennabasappa and Cyrus Nikolaidis and others and Gabriel Synnaeve and Joshua Saxe},
+  title   = {Purple {Llama} {CyberSecEval}: A Secure Coding Benchmark for Language Models},
+  journal = {arXiv preprint arXiv:2312.04724}, year = {2023}
+}
+@misc{glazunov2024naptime,
+  author = {Sergei Glazunov and Mark Brand}, title = {Project Naptime: Evaluating Offensive Security Capabilities of Large Language Models},
+  howpublished = {Google Project Zero Blog}, year = {2024}}
+@misc{bigsleep2024,
+  author = {{Google Project Zero and Google DeepMind}}, title = {From Naptime to Big Sleep: Using Large Language Models to Catch Vulnerabilities in Real-World Code},
+  howpublished = {Google Project Zero Blog}, year = {2024}}
+@inproceedings{zhang2025cybench,
+  author    = {Andy K. Zhang and Neil Perry and Riya Dulepet and others and Dan Boneh and Daniel E. Ho and Percy Liang},
+  title     = {{Cybench}: A Framework for Evaluating Cybersecurity Capabilities and Risks of Language Models},
+  booktitle = {International Conference on Learning Representations (ICLR)}, year = {2025}, note = {arXiv:2408.08926}
+}
+@inproceedings{shao2024nyuctf,
+  author    = {Minghao Shao and Sofija Jancheska and Meet Udeshi and Brendan Dolan-Gavitt and others and Ramesh Karri and Muhammad Shafique},
+  title     = {{NYU CTF Bench}: A Scalable Open-Source Benchmark Dataset for Evaluating {LLMs} in Offensive Security},
+  booktitle = {Advances in Neural Information Processing Systems (NeurIPS), Datasets and Benchmarks Track}, pages = {57472--57498}, year = {2024}, note = {arXiv:2406.05590}
+}
+@article{seccodegen2025,
+  author  = {Anonymous},
+  title   = {An Empirical Study on {LLM}-Driven Secure Code Generation},
+  journal = {arXiv preprint arXiv:2506.23034}, year = {2025}, note = {作者待核实}
+}
+
+% ----------------------------------------------------------------------------
+% E. 启发式 / 进化式 LLM 程序搜索 与 自我改进 Agent(方法论核心)
+% ----------------------------------------------------------------------------
+@misc{weng2026hl,
+  author = {Jiayi Weng}, title = {Learning Beyond Gradients}, howpublished = {\url{https://github.com/Trinkle23897/learning-beyond-gradients}}, year = {2026}}
+@article{romeraparedes2024funsearch,
+  author  = {Bernardino Romera-Paredes and Mohammadamin Barekatain and Alexander Novikov and Matej Balog and others},
+  title   = {Mathematical Discoveries from Program Search with Large Language Models},
+  journal = {Nature}, volume = {625}, pages = {468--475}, year = {2024}, doi = {10.1038/s41586-023-06924-6}
+}
+@article{novikov2025alphaevolve,
+  author  = {Alexander Novikov and Ng\^an V\~u and Marvin Eisenberger and others and Matej Balog},
+  title   = {{AlphaEvolve}: A Coding Agent for Scientific and Algorithmic Discovery},
+  journal = {arXiv preprint arXiv:2506.13131}, year = {2025}
+}
+@inproceedings{liu2024eoh,
+  author    = {Fei Liu and Tong Xialiang and Mingxuan Yuan and Xi Lin and Fu Luo and Zhenkun Wang and Zhichao Lu and Qingfu Zhang},
+  title     = {Evolution of Heuristics: Towards Efficient Automatic Algorithm Design Using Large Language Model},
+  booktitle = {Int. Conf. on Machine Learning (ICML)}, year = {2024}, note = {arXiv:2401.02051}
+}
+@inproceedings{madaan2023selfrefine,
+  author    = {Aman Madaan and Niket Tandon and Prakhar Gupta and others},
+  title     = {Self-Refine: Iterative Refinement with Self-Feedback},
+  booktitle = {Advances in Neural Information Processing Systems (NeurIPS)}, year = {2023}, note = {arXiv:2303.17651}
+}
+@inproceedings{shinn2023reflexion,
+  author    = {Noah Shinn and Federico Cassano and Beck Labash and Ashwin Gopinath and Karthik Narasimhan and Shunyu Yao},
+  title     = {Reflexion: Language Agents with Verbal Reinforcement Learning},
+  booktitle = {Advances in Neural Information Processing Systems (NeurIPS)}, year = {2023}, note = {arXiv:2303.11366}
+}
+@inproceedings{chen2024selfdebug,
+  author    = {Xinyun Chen and Maxwell Lin and Nathanael Sch\"arli and Denny Zhou},
+  title     = {Teaching Large Language Models to Self-Debug},
+  booktitle = {International Conference on Learning Representations (ICLR)}, year = {2024}, note = {arXiv:2304.05128}
+}
+@article{hu2024adas,
+  author  = {Shengran Hu and Cong Lu and Jeff Clune},
+  title   = {Automated Design of Agentic Systems},
+  journal = {arXiv preprint arXiv:2408.08435}, year = {2024}
+}
+@article{zhang2025dgm,
+  author  = {Jenny Zhuoting Zhang and Shengran Hu and Cong Lu and Robert Lange and Jeff Clune},
+  title   = {Darwin {G\"odel} Machine: Open-Ended Evolution of Self-Improving Agents},
+  journal = {arXiv preprint arXiv:2505.22954}, year = {2025}
+}
+@inproceedings{wang2023voyager,
+  author  = {Guanzhi Wang and Yuqi Xie and Yunfan Jiang and Ajay Mandlekar and Chaowei Xiao and Yuke Zhu and Linxi Fan and Anima Anandkumar},
+  title   = {Voyager: An Open-Ended Embodied Agent with Large Language Models},
+  booktitle = {arXiv preprint arXiv:2305.16291}, year = {2023}
+}
+@inproceedings{pathak2017icm,
+  author    = {Deepak Pathak and Pulkit Agrawal and Alexei A. Efros and Trevor Darrell},
+  title     = {Curiosity-driven Exploration by Self-supervised Prediction},
+  booktitle = {Int. Conf. on Machine Learning (ICML)}, year = {2017}, note = {arXiv:1705.05363}
+}
+@inproceedings{burda2019rnd,
+  author    = {Yuri Burda and Harrison Edwards and Amos Storkey and Oleg Klimov},
+  title     = {Exploration by Random Network Distillation},
+  booktitle = {International Conference on Learning Representations (ICLR)}, year = {2019}, note = {arXiv:1810.12894}
+}
+@article{lehman2011novelty,
+  author  = {Joel Lehman and Kenneth O. Stanley},
+  title   = {Abandoning Objectives: Evolution Through the Search for Novelty Alone},
+  journal = {Evolutionary Computation}, volume = {19}, number = {2}, pages = {189--223}, year = {2011}, doi = {10.1162/EVCO_a_00025}
+}
+@article{mouret2015mapelites,
+  author  = {Jean-Baptiste Mouret and Jeff Clune},
+  title   = {Illuminating Search Spaces by Mapping Elites},
+  journal = {arXiv preprint arXiv:1504.04909}, year = {2015}
+}
+@article{schmidhuber2010creativity,
+  author  = {J\"urgen Schmidhuber},
+  title   = {Formal Theory of Creativity, Fun, and Intrinsic Motivation (1990--2010)},
+  journal = {IEEE Transactions on Autonomous Mental Development}, volume = {2}, number = {3}, pages = {230--247}, year = {2010}, doi = {10.1109/TAMD.2010.2056368}
+}
+
+% ----------------------------------------------------------------------------
+% F. 自主网络防御 / 自适应安全(对照范式)
+% ----------------------------------------------------------------------------
+@article{kephart2003autonomic,
+  author  = {Jeffrey O. Kephart and David M. Chess},
+  title   = {The Vision of Autonomic Computing},
+  journal = {Computer}, volume = {36}, number = {1}, pages = {41--50}, year = {2003}, doi = {10.1109/MC.2003.1160055}
+}
+@article{yuan2014selfprotecting,
+  author  = {Eric Yuan and Naeem Esfahani and Sam Malek},
+  title   = {A Systematic Survey of Self-Protecting Software Systems},
+  journal = {ACM Transactions on Autonomous and Adaptive Systems (TAAS)}, volume = {8}, number = {4}, pages = {1--41}, year = {2014}, doi = {10.1145/2555611}
+}
+@inproceedings{standen2021cyborg,
+  author  = {Maxwell Standen and Martin Lucas and David Bowman and Toby J. Richer and Junae Kim and Damian Marriott},
+  title   = {{CybORG}: A Gym for the Development of Autonomous Cyber Agents},
+  booktitle = {IJCAI-21 1st Int. Workshop on Adaptive Cyber Defense}, year = {2021}, note = {arXiv:2108.09118}
+}
+@article{castro2025llmacd,
+  author  = {Sebasti\'an Castro and others},
+  title   = {Large Language Models are Autonomous Cyber Defenders},
+  journal = {arXiv preprint arXiv:2505.04843}, year = {2025}
+}

@@ -1,0 +1,601 @@
+%!TEX program = xelatex
+\documentclass[aspectratio=169,10pt]{beamer}
+
+% ===== 中文与字体 =====
+\usepackage[fontset=fandol]{ctex}
+\usepackage[T1]{fontenc}
+
+% ===== 常用宏包 =====
+\usepackage{latexsym,amsmath,amssymb,xcolor,multicol,booktabs}
+\usepackage{colortbl}
+\usepackage{graphicx}
+\usepackage{tikz}
+\usepackage{array}
+\usetikzlibrary{arrows.meta,positioning,calc,shapes.geometric,backgrounds,fit,shadows}
+
+% ===== 标题字段（必须在 \usepackage{Tsinghua} 之前）=====
+\title{基于大模型编码智能体的自进化 eBPF 网络入侵防御系统}
+\subtitle{硕士学位论文开题报告}
+\author{研究生：李兆曦 \\ 指导教师：徐恪 教授}
+\institute{清华大学 计算机科学与技术系}
+\date{2026 年 6 月}
+
+% ===== 主题（必须在标题字段之后）=====
+\usepackage{Tsinghua}
+
+% ===== 颜色定义 =====
+\definecolor{thupurple}{rgb}{0.455,0.204,0.506}
+\definecolor{thublue}{RGB}{0,78,152}
+\definecolor{deepblue}{rgb}{0,0,0.5}
+\definecolor{deepred}{rgb}{0.6,0,0}
+\definecolor{deepgreen}{rgb}{0,0.5,0}
+\definecolor{thugray}{gray}{0.45}
+\definecolor{boxbg}{rgb}{0.95,0.92,0.96}
+
+% ===== 参考文献（GB/T 7714，上标引用 \supercite）=====
+\usepackage[backend=biber,style=gb7714-2015,sorting=none]{biblatex}
+\addbibresource{../refs/refs.bib}
+\renewcommand*{\bibfont}{\scriptsize}
+
+% ===== tikz 流程框样式 =====
+\tikzset{
+  stepbox/.style={
+    rectangle, rounded corners=3pt, draw=thupurple, very thick,
+    fill=thupurple!8, text=black, align=center,
+    minimum height=1.0cm, inner sep=4pt, font=\footnotesize\kaishu
+  },
+  centerbox/.style={
+    rectangle, rounded corners=4pt, draw=thupurple, very thick,
+    fill=thupurple!85, text=white, align=center,
+    minimum height=1.0cm, inner sep=4pt, font=\footnotesize\kaishu\bfseries
+  },
+  flowarrow/.style={-{Stealth[length=3mm,width=2mm]}, very thick, thupurple},
+  layerbox/.style={
+    rectangle, rounded corners=2pt, draw=thupurple!70, thick,
+    fill=thupurple!6, align=center, minimum width=2.6cm, minimum height=0.9cm,
+    inner sep=3pt, font=\scriptsize\kaishu
+  }
+}
+
+% ===== 带圈数字 =====
+\newcommand{\cn}[1]{\tikz[baseline=(c.base)]{%
+  \node[shape=circle, draw=thupurple, fill=thupurple, text=white,
+        inner sep=0.6pt, font=\footnotesize\bfseries, minimum size=1.25em] (c) {#1};}}
+
+% 覆盖主题的分节扉页：两栏目录，避免章节过多竖向溢出
+\AtBeginSection[]{
+  \begin{frame}{目录}
+    \begin{columns}[t]
+      \begin{column}{0.5\textwidth}
+        \tableofcontents[sections={1-4},sectionstyle=show/shaded,subsectionstyle=hide]
+      \end{column}
+      \begin{column}{0.5\textwidth}
+        \tableofcontents[sections={5-8},sectionstyle=show/shaded,subsectionstyle=hide]
+      \end{column}
+    \end{columns}
+  \end{frame}
+}
+
+\begin{document}
+
+\kaishu
+
+% ======================= 标题页 =======================
+\begin{frame}[plain]
+    \titlepage
+    \begin{figure}[htpb]
+        \centering
+        \includegraphics[width=0.16\linewidth]{thu_logo.pdf}
+    \end{figure}
+\end{frame}
+
+% ======================= 目录 =======================
+\begin{frame}{目录}
+    \begin{columns}[t]
+      \begin{column}{0.5\textwidth}
+        \tableofcontents[sections={1-4},subsectionstyle=hide]
+      \end{column}
+      \begin{column}{0.5\textwidth}
+        \tableofcontents[sections={5-8},subsectionstyle=hide]
+      \end{column}
+    \end{columns}
+\end{frame}
+
+
+% =====================================================
+\section{研究背景与动机}
+% =====================================================
+
+\begin{frame}{TCP/IP 跨层歧义持续催生 off-path 协议攻击}
+    \begin{itemize}
+        \item TCP/IP 协议栈的跨层交互存在\textbf{语义歧义}，长期催生 \alert{off-path}（链外）协议攻击——攻击者无需位于通信路径上，即可推断或注入连接状态：
+        \begin{itemize}
+            \item challenge-ACK \textbf{侧信道}\supercite{cao2016offpath}（CVE-2016-5696，全局限速可被探测）
+            \item 混合 \textbf{IPID} 分配\supercite{feng2020mixedipid}、PMTUD 分片机制\supercite{feng2022pmtud}、NAT / Wi-Fi 链路劫持\supercite{yang2024natwifi}\,\ldots
+        \end{itemize}
+        \item 近期 \textbf{CCS'25} 工作\supercite{feng2025pmtudisolation}：利用 \textbf{PMTUD} 打破“IP 地址共享”场景下的 TCP 连接隔离
+        \begin{itemize}
+            \item 单次攻击平均约 \textbf{220\,s}，成功率约 \textbf{70\%}
+            \item 实测 \textbf{50} 个真实网络中 \textbf{38} 个存在脆弱性
+        \end{itemize}
+    \end{itemize}
+    \begin{block}{核心判断}
+        协议攻击面并非偶发，而是植根于\textbf{设计层面的跨层歧义}，会被持续不断地重新发掘\supercite{feng2025cacm}。
+    \end{block}
+\end{frame}
+
+\begin{frame}{规律：防御机制本身在制造新的攻击面}
+    \begin{itemize}
+        \item 大量新攻击面\textbf{恰由防御机制自身引入}——“补丁”反而成为下一处侧信道：
+    \end{itemize}
+    \vspace{0.3em}
+    \begin{center}
+    \begin{tikzpicture}[node distance=5mm and 9mm]
+        \node[stepbox, fill=thupurple!4] (d1) {challenge-ACK\\ 全局限速};
+        \node[stepbox, fill=thupurple!4, right=of d1] (d2) {源端口\\ 随机化};
+        \node[stepbox, fill=thupurple!4, right=of d2] (d3) {PMTUD\\ 分片探测};
+        \node[centerbox, below=9mm of d2] (atk) {均被转化为可探测的\,\textbf{侧信道 / 新攻击面}};
+        \draw[flowarrow] (d1) -- (atk);
+        \draw[flowarrow] (d2) -- (atk);
+        \draw[flowarrow] (d3) -- (atk);
+    \end{tikzpicture}
+    \end{center}
+    \vspace{0.2em}
+    \begin{alertblock}{启示}
+        攻击与防御\textbf{同源}且相互转化 $\Rightarrow$ 防御须\textbf{持续演化}，一次性静态修补难以为继。
+    \end{alertblock}
+\end{frame}
+
+\begin{frame}{现有防御的三大结构性缺陷}
+    \begin{columns}[T]
+        \begin{column}{0.5\textwidth}
+            \begin{block}{\cn{1} 零散}
+                各攻击面分别打补丁，缺乏统一框架，防御策略碎片化、难以协同。
+            \end{block}
+            \begin{block}{\cn{2} 滞后}
+                先有攻击曝光、再被动响应，从披露到修复存在显著时间窗口。
+            \end{block}
+        \end{column}
+        \begin{column}{0.5\textwidth}
+            \begin{block}{\cn{3} 依赖人工编写内核代码}
+                \begin{itemize}
+                    \item 内核协议栈改动\textbf{周期长}：评审、回归、上线缓慢
+                    \item \textbf{易出错}：一处缺陷即可断网或误杀正常流量
+                    \item 知识\textbf{难以沉淀}：经验留存于个人，复用困难
+                \end{itemize}
+            \end{block}
+        \end{column}
+    \end{columns}
+    \vspace{0.4em}
+    \begin{center}
+        \kaishu\color{thupurple}\textbf{症结：防御的生产方式仍是人工、低速、难以累积的。}
+    \end{center}
+\end{frame}
+
+\begin{frame}{两项技术趋于成熟，使自动化防御成为可能}
+    \begin{columns}[T]
+        \begin{column}{0.5\textwidth}
+            \begin{exampleblock}{eBPF 内核可编程}
+                \begin{itemize}
+                    \item \textbf{热加载}：无需修改内核源码、无需重启
+                    \item \textbf{贴近协议栈}：XDP / TC 钩子在数据面线速处理
+                    \item 内置 \textbf{verifier}：对程序施加\textbf{形式化安全验证}（有界、内存安全、可终止）\supercite{gershuni2019prevail}
+                \end{itemize}
+            \end{exampleblock}
+        \end{column}
+        \begin{column}{0.5\textwidth}
+            \begin{exampleblock}{大模型编码智能体}
+                \begin{itemize}
+                    \item 能够\textbf{编写、修改、调试}系统级代码
+                    \item 具备工具调用、反思与迭代能力
+                    \item 已能在反馈闭环中自主推进复杂任务\supercite{romeraparedes2024funsearch,novikov2025alphaevolve}
+                    \item 代表性产品 / 框架：Claude Code、Cursor、Codex、Devin、SWE-agent\supercite{anthropic2025claudecode,yang2024sweagent}
+                \end{itemize}
+            \end{exampleblock}
+        \end{column}
+    \end{columns}
+    \vspace{0.5em}
+    \begin{block}{契机}
+        二者结合:eBPF 作可热插拔、可验证的内核执行底座,智能体作自动化代码生产——使“由智能体持续维护内核防御”可行。
+    \end{block}
+\end{frame}
+
+
+% =====================================================
+\section{研究问题与挑战}
+% =====================================================
+
+\begin{frame}{核心研究问题}
+    \begin{block}{研究问题}
+        \centering\large
+        能否让\textbf{大模型编码智能体}自主维护一套运行于\textbf{内核}的 \textbf{eBPF 防御库}，\\[2pt]
+        使其\textbf{持续进化}，以应对不断涌现的协议攻击？
+    \end{block}
+    \vspace{0.5em}
+    \begin{itemize}
+        \item 目标不是“一次性合成单个防御程序”，而是构建一个\textbf{长期自主运转}的防御系统；
+        \item 核心在于\textbf{自主性}（探索—合成—验证—部署的闭环）与\textbf{进化性}（防御能力单调累积、不回退）。
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{四项关键挑战}
+    \begin{columns}[T]
+        \begin{column}{0.5\textwidth}
+            \begin{alertblock}{\cn{1} 可靠性}
+                智能体编写的内核代码若含缺陷，可能直接\textbf{断网}或\textbf{误杀}正常流量——必须确保“先验证安全、后部署”。
+            \end{alertblock}
+            \begin{alertblock}{\cn{2} 探索高效性}
+                协议状态空间\textbf{巨大且充满噪声}，如何高效发现\textbf{真正有价值}的攻击面，而非无效扰动？
+            \end{alertblock}
+        \end{column}
+        \begin{column}{0.5\textwidth}
+            \begin{alertblock}{\cn{3} 非梯度演化的收敛性}
+                防御以\textbf{代码}为载体演化，如何保证其\textbf{单调进化}、不腐化、不回退（避免灾难性遗忘）？
+            \end{alertblock}
+            \begin{alertblock}{\cn{4} 评测}
+                如何\textbf{量化}系统对\textbf{未知攻击}的自主防御能力，给出可复现、可对比的度量？
+            \end{alertblock}
+        \end{column}
+    \end{columns}
+\end{frame}
+
+
+% =====================================================
+\section{相关工作}
+% =====================================================
+
+\begin{frame}{相关工作（一）：协议攻防与 eBPF 运行时防御}
+    \begin{block}{协议攻击与检测}
+        \begin{itemize}
+            \item \textbf{攻击}：off-path 协议攻击系列工作（challenge-ACK、IPID、PMTUD 等）\supercite{feng2025cacm,feng2025pmtudisolation}
+            \item \textbf{检测}：SCENT\supercite{cao2019scent}、SCAD\supercite{man2024scad} 等侧信道检测方法
+            \item \textbf{现状}：防御\textbf{零散、滞后}，缺少统一且持续演化的框架
+        \end{itemize}
+    \end{block}
+    \begin{block}{eBPF 运行时防御}
+        \begin{itemize}
+            \item 系统：Katran\supercite{shirokov2018katran}、Cilium\supercite{graf2020cilium}、Falco\supercite{falco2018}、Tetragon\supercite{tetragon2022}——能力强，但策略\textbf{均由人工编写}
+            \item 验证：PREVAIL\supercite{gershuni2019prevail}、K2\supercite{xu2021k2} 等围绕 verifier 的程序分析与优化
+        \end{itemize}
+    \end{block}
+\end{frame}
+
+\begin{frame}{相关工作（二）：大模型用于安全 与 方法论基础}
+    \begin{columns}[T]
+        \begin{column}{0.52\textwidth}
+            \begin{block}{大模型 $\times$ 安全}
+                \begin{itemize}
+                    \item \textbf{进攻}：PentestGPT\supercite{deng2024pentestgpt}、Big Sleep\supercite{glazunov2024naptime}
+                    \item \textbf{合成 eBPF}：\alert{Kgent / KEN}\supercite{yang2024kgent}——由自然语言合成 eBPF，是\textbf{最直接的对比基线}
+                    \begin{itemize}
+                        \item 局限：\textbf{一次性合成}，\textbf{非自主、持续维护}
+                    \end{itemize}
+                    \item \textbf{工程载体}：Claude Code / Cursor / Codex / Devin / SWE-agent\supercite{anthropic2025claudecode,cursor2024,yang2024sweagent}——\textbf{通用而非领域专用}，需专门 harness
+                \end{itemize}
+            \end{block}
+        \end{column}
+        \begin{column}{0.48\textwidth}
+            \begin{block}{方法论基础}
+                \begin{itemize}
+                    \item 非梯度演化范式\supercite{weng2026hl}
+                    \item 程序演化搜索：FunSearch\supercite{romeraparedes2024funsearch}、AlphaEvolve\supercite{novikov2025alphaevolve}
+                    \item 自演化智能体：Darwin-G\"odel Machine\supercite{zhang2025dgm}
+                    \item 探索机制：ICM\supercite{pathak2017icm}、RND\supercite{burda2019rnd}（基于预测误差与新颖性）
+                    \item 多样化解集：Novelty Search\supercite{lehman2011novelty}、MAP-Elites\supercite{mouret2015mapelites}
+                \end{itemize}
+            \end{block}
+        \end{column}
+    \end{columns}
+    \vspace{0.2em}
+    \begin{center}
+        \footnotesize\color{thugray}上述方法论共同支撑“以可验证代码为载体的非梯度演化”。
+    \end{center}
+\end{frame}
+
+\begin{frame}{定位对比：本文与代表性工作}
+    \begin{center}
+    \renewcommand{\arraystretch}{1.35}
+    \footnotesize\kaishu
+    \begin{tabular}{>{\raggedright\arraybackslash}p{3.0cm}|>{\raggedright\arraybackslash}p{3.9cm}|>{\raggedright\arraybackslash}p{3.9cm}}
+        \toprule
+        \textbf{对比对象} & \textbf{已有范式} & \textbf{本文范式} \\
+        \midrule
+        Kgent / KEN\supercite{yang2024kgent} & 一次性合成 eBPF & \cellcolor{boxbg}长期\textbf{自主维护}的防御库 \\
+        Tetragon / Falco\supercite{tetragon2022,falco2018} & 人工编写策略 & \cellcolor{boxbg}\textbf{自进化}地生成与更新策略 \\
+        小模型（权重学习） & 知识沉淀为\textbf{权重} & \cellcolor{boxbg}知识沉淀为\textbf{可验证代码} \\
+        \bottomrule
+    \end{tabular}
+    \end{center}
+    \vspace{0.4em}
+    \begin{itemize}
+        \item 共同差异：由\textbf{一次合成 / 人工 / 权重} $\;\longrightarrow\;$ \textbf{持续、自主、可验证的代码演化}。
+    \end{itemize}
+\end{frame}
+
+
+% =====================================================
+\section{研究内容与方法}
+% =====================================================
+
+\begin{frame}{核心思路：防御演化（Defensive Evolution）}
+    \begin{block}{什么是“防御演化”}
+        让编码智能体\textbf{持续维护并演化}一套运行在内核的防御代码:把防御能力沉淀为\textbf{可验证的 eBPF 代码}(而不是模型权重),随攻击的出现不断增补、修正。
+    \end{block}
+    \vspace{0.2em}
+    \begin{columns}[T]
+        \begin{column}{0.5\textwidth}
+            \textbf{以可验证代码为载体的优势：}
+            \begin{itemize}
+                \item 容量\textbf{无界}（不受参数量限制）
+                \item 抗\textbf{灾难性遗忘}（旧防御不被覆盖）
+                \item \textbf{可解释}（每条防御对应一段代码）
+            \end{itemize}
+        \end{column}
+        \begin{column}{0.5\textwidth}
+            \vspace{1.6em}
+            \begin{itemize}
+                \item \textbf{线速}执行（XDP 数据面）
+                \item 可\textbf{形式化验证}（verifier 背书）
+            \end{itemize}
+        \end{column}
+    \end{columns}
+\end{frame}
+
+\begin{frame}{四项研究内容}
+    \begin{enumerate}\itemsep=0.5em
+        \item \textbf{范式形式化 + 系统框架 + 专用 harness}\\
+        \footnotesize\color{thugray}界定“以可验证代码为载体的演化”;把 eBPF 工具、verifier 反馈、沙箱、靶场、档案封装成智能体的工具接口。\normalsize\par
+        \item \textbf{攻击面探索}\\
+        \footnotesize\color{thugray}以新颖性与覆盖度为信号,发现现有防御覆盖不到的攻击。\normalsize\par
+        \item \textbf{进化式 eBPF 合成 + 可信加载闭环}\\
+        \footnotesize\color{thugray}大模型生成 / 改写 eBPF,经多层验证后热加载到内核。\normalsize\par
+        \item \textbf{防御库维护 + 攻防协同演化评测}\\
+        \footnotesize\color{thugray}沉淀多样化防御,量化对已知 / 未知攻击的防御效果。\normalsize\par
+    \end{enumerate}
+\end{frame}
+
+\begin{frame}{系统分层架构}
+    \begin{center}
+    \resizebox{0.99\textwidth}{!}{%
+    \begin{tikzpicture}[font=\footnotesize\kaishu,
+        m/.style={rectangle, rounded corners=3pt, draw=thupurple, very thick, fill=thupurple!8,
+                  align=center, text width=2.6cm, minimum height=1.1cm, inner sep=2pt},
+        w/.style={rectangle, rounded corners=3pt, draw=thupurple, very thick, fill=thupurple!8,
+                  align=center, text width=6.2cm, minimum height=1.1cm},
+        io/.style={rectangle, rounded corners=5pt, draw=thublue, very thick, fill=thublue!10,
+                  align=center, text width=2.7cm, minimum height=1.7cm},
+        lyr/.style={font=\scriptsize\bfseries\kaishu, text=thupurple, rotate=90},
+        f/.style={-{Stealth[length=3mm]}, line width=1.2pt, draw=thupurple},
+        fb/.style={-{Stealth[length=3mm]}, line width=1.1pt, draw=deepred, dashed},
+        kb/.style={{Stealth[length=2.6mm]}-{Stealth[length=2.6mm]}, line width=1.1pt, draw=thublue, dashed}]
+        % ===== 三层（中列）=====
+        \node[m] (explore) at (3.4,4.4) {攻击面探索\\[1pt]\scriptsize 新颖性·覆盖度};
+        \node[m] (synth)   at (6.6,4.4) {eBPF 合成 / 变异\\[1pt]\scriptsize 大模型生成·改写};
+        \node[m] (reflect) at (9.8,4.4) {反思 · 自修正\\[1pt]\scriptsize 据反馈迭代};
+        \node[lyr] at (1.5,4.4) {控制面 · 智能体};
+        \node[m] (clang)    at (3.4,2.2) {clang 编译};
+        \node[m] (verifier) at (6.6,2.2) {内核 verifier};
+        \node[m] (sandbox)  at (9.8,2.2) {隔离沙箱\\[1pt]\scriptsize 攻击重放};
+        \node[lyr] at (1.5,2.2) {可信验证面};
+        \node[w] (tail) at (5.0,0) {内核 XDP:tail-call 防御链\;$f_0\!\to\!\cdots\!\to$ PASS/DROP};
+        \node[m] (tele) at (9.8,0) {连接追踪 / 遥测};
+        \node[lyr] at (1.5,0) {内核数据面};
+        % ===== 左右 I/O =====
+        \node[io] (range) at (-1.6,4.4) {攻防靶场 / 红队\\[2pt]\scriptsize PMTUD·NAT·IPID\\ 等攻击(含未知留出)};
+        \node[io] (lib)   at (13.3,4.4) {防御库 / 知识库\\[2pt]\scriptsize 已验证防御\\ + 攻防经验};
+        % ===== 层内 =====
+        \draw[f] (explore)--(synth); \draw[f] (synth)--(reflect);
+        \draw[f] (clang)--(verifier); \draw[f] (verifier)--(sandbox);
+        % ===== 下行主流 =====
+        \draw[f] (synth)--(verifier) node[midway,right=2pt,font=\scriptsize,text=thupurple]{候选 eBPF};
+        \draw[f] (verifier.south)--(tail.north) node[midway,right=2pt,font=\scriptsize,text=thupurple]{验证通过·热加载};
+        % ===== 输入 / 知识库 =====
+        \draw[f] (range)--(explore) node[midway,above,font=\scriptsize,text=thublue]{攻击样本};
+        \draw[kb] (reflect)--(lib);
+        \node[font=\scriptsize,text=thublue] at (11.55,5.2) {沉淀 / 采样};
+        % ===== 反馈回灌（左下绕行，避开层标签与防御库）=====
+        \draw[fb] (tail.south) -- (5.0,-0.95) -- (0.2,-0.95) -- (0.2,5.35) -- (3.4,5.35) -- (explore.north);
+        \node[below,font=\scriptsize,text=deepred] at (2.7,-0.95) {运行时反馈(遥测·报错) → 再迭代};
+    \end{tikzpicture}}
+    \end{center}
+    \vspace{1pt}
+    {\centering\footnotesize\kaishu\color{thugray}
+     控制面(智能体)生成候选 → 可信验证面把关 → 内核数据面执行;反馈回灌驱动持续迭代,有效防御沉淀入知识库。\par}
+\end{frame}
+
+
+% =====================================================
+\section{技术路线}
+% =====================================================
+
+\begin{frame}{技术路线：防御演化闭环（五阶段）}
+    \begin{center}
+    \resizebox{\textwidth}{!}{%
+    \begin{tikzpicture}[font=\footnotesize\kaishu,
+        st/.style={rectangle, rounded corners=6pt, draw=thupurple, very thick,
+                   fill=thupurple!8, align=center, text width=3.0cm, minimum height=2.05cm,
+                   drop shadow={shadow xshift=1.4pt, shadow yshift=-1.4pt, opacity=0.25, fill=thupurple!40}},
+        fa/.style={-{Stealth[length=3.6mm,width=3mm]}, line width=1.5pt, draw=thupurple, line cap=round}]
+        \node[st] (s1) {\cn{1}\\[3pt]\textbf{攻击面探索}\\[2pt]\scriptsize 新颖性 · 覆盖度引导};
+        \node[st, right=1.1cm of s1] (s2) {\cn{2}\\[3pt]\textbf{防御合成}\\[2pt]\scriptsize 大模型生成 · 改写 eBPF};
+        \node[st, right=1.1cm of s2] (s3) {\cn{3}\\[3pt]\textbf{可信验证}\\[2pt]\scriptsize 编译 · verifier · 沙箱};
+        \node[st, right=1.1cm of s3] (s4) {\cn{4}\\[3pt]\textbf{部署与反馈}\\[2pt]\scriptsize 热加载 · 运行时遥测};
+        \node[st, right=1.1cm of s4] (s5) {\cn{5}\\[3pt]\textbf{沉淀防御库}\\[2pt]\scriptsize 保留多样化防御};
+        \draw[fa] (s1)--(s2); \draw[fa] (s2)--(s3); \draw[fa] (s3)--(s4); \draw[fa] (s4)--(s5);
+        \draw[fa, dashed, draw=thupurple!55] (s3.north) .. controls +(0,1.15) and +(0,1.15) .. (s2.north)
+            node[midway, above, font=\scriptsize, text=thupurple!80] {验证失败 $\to$ 自修正};
+        \draw[fa] (s5.south) -- ++(0,-1.05)
+            -| node[pos=0.25, below, font=\scriptsize, text=thupurple]
+            {运行时反馈 / 新颖性回灌（非梯度、持续演化）} (s1.south);
+    \end{tikzpicture}}
+    \end{center}
+    \vspace{2pt}
+    {\centering\footnotesize\kaishu\color{thugray}
+     每轮迭代将新发现的攻击面转化为一段经 verifier 背书的 eBPF 防御，并沉淀入防御库。\par}
+\end{frame}
+
+\begin{frame}{可信保障：四层安全约束 + 自动回滚}
+    \begin{center}
+    \resizebox{\textwidth}{!}{%
+    \begin{tikzpicture}[node distance=4mm and 6mm]
+        \node[layerbox, fill=thublue!8, draw=thublue!70] (in) {智能体生成的\\ eBPF 候选};
+        \node[layerbox, right=of in] (l1) {静态沙箱\\\scriptsize 隔离执行};
+        \node[layerbox, right=of l1] (l2) {模板封装\\\scriptsize 受限接口};
+        \node[layerbox, right=of l2] (l3) {\texttt{-Werror}\\\scriptsize 编译零容忍};
+        \node[layerbox, right=of l3, fill=thupurple!20, draw=thupurple, very thick] (l4) {内核 verifier\\\scriptsize 安全预言机};
+        \draw[flowarrow] (in) -- (l1);
+        \draw[flowarrow] (l1) -- (l2);
+        \draw[flowarrow] (l2) -- (l3);
+        \draw[flowarrow] (l3) -- (l4);
+        \node[below=7mm of l2, font=\scriptsize\kaishu, text=deepred] (rb) {任一层未通过 / 运行异常 $\Rightarrow$ \textbf{自动回滚}};
+        \draw[-{Stealth[length=2.5mm]}, very thick, deepred] (l4.south) |- (rb.east);
+    \end{tikzpicture}}
+    \end{center}
+    \begin{block}{思路：现成安全设施 + 智能体闭环}
+        这四层(沙箱、模板、\texttt{-Werror}、内核 verifier)都是\textbf{现成的基础设施};本文不重造它们,而是\textbf{把它们接入智能体闭环}——以编译 / verifier 报错作反馈驱动\textbf{自修正},沙箱重放把关,异常即\textbf{自动回滚},从而可靠地实现内核代码自动化。
+    \end{block}
+\end{frame}
+
+\begin{frame}{工程基线：已有开源系统积累}
+    \begin{block}{PacketScope / Guarder}
+        \begin{itemize}
+            \item \textbf{XDP 数据面}：在网卡驱动层线速处理报文
+            \item \textbf{bpf2go 一键编译}：Go 侧封装，eBPF 程序构建与加载流程化
+            \item \textbf{规则热加载}：策略可在运行时动态更新，无需重启
+            \item 已具备 \textbf{Agent 可编程 eBPF 原型}，配套 \textbf{312} 项测试
+        \end{itemize}
+    \end{block}
+    \vspace{0.3em}
+    \begin{center}
+        \kaishu\color{thupurple}\textbf{已具备数据面、编译链与热加载基础设施，闭环可在现有底座上快速搭建。}
+    \end{center}
+\end{frame}
+
+\begin{frame}{评测设计：攻防协同演化}
+    \begin{block}{评测方式}
+        红队与防御系统\textbf{协同演化};攻击集分为\textbf{训练种子}与\textbf{未知攻击留出集},考察无人工补丁介入下的自主防御。
+    \end{block}
+    \begin{columns}[T]
+        \begin{column}{0.52\textwidth}
+            \textbf{度量指标}
+            \begin{itemize}
+                \item 已知攻击:\textbf{检出率 / 误报率}
+                \item 未知攻击(留出):随迭代的\textbf{防御覆盖提升}
+                \item 性能:XDP \textbf{吞吐损失 / 时延}
+                \item \textbf{自动化程度}(人工介入量)
+            \end{itemize}
+        \end{column}
+        \begin{column}{0.48\textwidth}
+            \textbf{对比与消融}
+            \begin{itemize}
+                \item Kgent / KEN(一次性合成)
+                \item Tetragon / Falco(人工策略)
+                \item 消融:去探索 / 去档案 / 去自修正
+            \end{itemize}
+        \end{column}
+    \end{columns}
+\end{frame}
+
+
+% =====================================================
+\section{创新点}
+% =====================================================
+
+\begin{frame}{创新点}
+    \begin{exampleblock}{\cn{1} 范式}
+        让编码智能体\textbf{持续维护与演化}内核防御代码——防御沉淀为“\textbf{可验证代码}”而非模型权重(即\textbf{防御演化})。
+    \end{exampleblock}
+    \begin{exampleblock}{\cn{2} 专用 harness}
+        为内核 eBPF 防御构建\textbf{领域专用的智能体 harness}(领域工具 + 反馈闭环),而非直接套用 Claude Code / Cursor 等通用编码智能体。
+    \end{exampleblock}
+    \begin{exampleblock}{\cn{3} 攻防协同演化评测基准}
+        构建含\textbf{未知攻击留出集}的评测,量化对已知 / 未知攻击的\textbf{防御效果、误报与开销}。
+    \end{exampleblock}
+\end{frame}
+
+
+% =====================================================
+\section{工作计划}
+% =====================================================
+
+\begin{frame}{工作计划（2026.06 -- 2027.06）}
+    \begin{center}
+    \renewcommand{\arraystretch}{1.3}
+    \footnotesize\kaishu
+    \begin{tabular}{>{\raggedright\arraybackslash}p{3.0cm}|>{\raggedright\arraybackslash}p{8.2cm}}
+        \toprule
+        \textbf{时间} & \textbf{工作内容} \\
+        \midrule
+        2026.06 & 开题报告 \\
+        2026.07 -- 09 & 防御演化\textbf{框架原型}：形式化定义 + 系统骨架 \\
+        2026.10 -- 12 & \textbf{闭环原型} + 初步实验（探索 / 合成 / 验证 / 部署 / 档案） \\
+        2027.01 -- 03 & \textbf{评测 + 对比实验} + 中期检查 \\
+        2027.04 -- 05 & \textbf{论文撰写、投稿} + 预答辩 + 送审 \\
+        2027.06 & \textbf{学位论文答辩} \\
+        \bottomrule
+    \end{tabular}
+    \end{center}
+    \vspace{0.2em}
+    \begin{center}
+    \begin{tikzpicture}[x=0.84cm, y=0.62cm, font=\tiny\kaishu]
+        \draw[thugray, semithick] (-0.1,0) -- (13.1,0);
+        \foreach \i/\lab in {0/06,1/07,2/08,3/09,4/10,5/11,6/12,7/01,8/02,9/03,10/04,11/05,12/06}{
+            \draw[thugray] (\i,0)--(\i,-0.12);
+            \node[below, text=thugray, inner sep=1pt] at (\i,-0.08) {\lab};}
+        \node[below, text=thugray] at (3,-0.52) {2026};
+        \node[below, text=thugray] at (9.5,-0.52) {2027};
+        \draw[rounded corners=2pt, fill=thupurple!62, draw=none] (1,0.5) rectangle (3.92,1.18);
+            \node[anchor=west, white] at (1.12,0.84) {框架原型};
+        \draw[rounded corners=2pt, fill=thupurple!50, draw=none] (4,1.5) rectangle (6.92,2.18);
+            \node[anchor=west, white] at (4.12,1.84) {闭环原型 + 实验};
+        \draw[rounded corners=2pt, fill=thupurple!40, draw=none] (7,0.5) rectangle (9.92,1.18);
+            \node[anchor=west, white] at (7.12,0.84) {评测 + 对比};
+        \draw[rounded corners=2pt, fill=thupurple!30, draw=none] (10,1.5) rectangle (11.92,2.18);
+            \node[anchor=west] at (10.12,1.84) {论文撰写};
+        \foreach \x/\m in {0/开题, 9.5/中期检查, 12.6/答辩}{
+            \node[diamond, fill=thupurple, draw=thupurple, inner sep=1.9pt] at (\x,2.62) {};
+            \node[above, text=thupurple, font=\tiny] at (\x,2.7) {\m};}
+    \end{tikzpicture}
+    \end{center}
+\end{frame}
+
+
+% =====================================================
+\section{预期成果}
+% =====================================================
+
+\begin{frame}{预期成果}
+    \begin{itemize}
+        \item \textbf{学位论文}：完成硕士学位论文 1 篇。
+        \item \textbf{开源系统}：开源\textbf{自进化 eBPF 防御系统}、\textbf{防御演化专用 harness}及配套\textbf{攻防评测基准}。
+        \item \textbf{社区贡献}：对发现的协议 / 实现缺陷，向 \textbf{IETF / Linux} 进行\textbf{负责任披露}。
+    \end{itemize}
+    \vspace{0.6em}
+    \begin{block}{成果定位}
+        既贡献\textbf{新范式与系统}，也贡献\textbf{可复现的评测基准}，推动“智能体自主维护内核安全”方向的后续研究。
+    \end{block}
+\end{frame}
+
+
+% =====================================================
+\section*{参考文献}
+% =====================================================
+
+\begin{frame}[allowframebreaks]{参考文献}
+    \printbibliography[heading=none]
+\end{frame}
+
+
+% =====================================================
+\section*{致谢}
+% =====================================================
+
+\begin{frame}[plain]
+    \begin{center}
+        \vspace{1.5cm}
+        {\Huge\bfseries\kaishu 敬请各位老师批评指正}\\[1.1cm]
+        {\Large\kaishu 谢\quad 谢！}
+    \end{center}
+\end{frame}
+
+\end{document}
