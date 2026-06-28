@@ -14,3 +14,7 @@
 *.synctex.gz
 __pycache__/
 **/preview/
+*.xdv
+slides/pg_*.png
+slides/logo_check.png
+keynote/img/
