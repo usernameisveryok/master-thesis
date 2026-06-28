@@ -381,7 +381,7 @@
         \node[m] (tele) at (9.8,0) {连接追踪 / 遥测};
         \node[lyr] at (1.5,0) {内核数据面};
         % ===== 左右 I/O =====
-        \node[io] (range) at (-1.6,4.4) {攻防靶场 / 红队\\[2pt]\scriptsize PMTUD·NAT·IPID\\ 等攻击(含未知留出)};
+        \node[io] (range) at (-1.6,4.4) {攻防靶场 / 红队\\[2pt]\scriptsize PMTUD·NAT·IPID\\ 等攻击(含预留的未知攻击)};
         \node[io] (lib)   at (13.3,4.4) {防御库 / 知识库\\[2pt]\scriptsize 已验证防御\\ + 攻防经验};
         % ===== 层内 =====
         \draw[f] (explore)--(synth); \draw[f] (synth)--(reflect);
@@ -473,14 +473,14 @@
 
 \begin{frame}{评测设计：攻防协同演化}
     \begin{block}{评测方式}
-        红队与防御系统\textbf{协同演化};攻击集分为\textbf{训练种子}与\textbf{未知攻击留出集},考察无人工补丁介入下的自主防御。
+        红队与防御系统\textbf{协同演化};攻击集分为\textbf{训练种子}与\textbf{预留的未知攻击},考察无人工补丁介入下的自主防御。
     \end{block}
     \begin{columns}[T]
         \begin{column}{0.52\textwidth}
             \textbf{度量指标}
             \begin{itemize}
                 \item 已知攻击:\textbf{检出率 / 误报率}
-                \item 未知攻击(留出):随迭代的\textbf{防御覆盖提升}
+                \item 未知攻击(预留测试):随迭代的\textbf{防御覆盖提升}
                 \item 性能:XDP \textbf{吞吐损失 / 时延}
                 \item \textbf{自动化程度}(人工介入量)
             \end{itemize}
@@ -509,7 +509,7 @@
         为内核 eBPF 防御构建\textbf{领域专用的智能体 harness}(领域工具 + 反馈闭环),而非直接套用 Claude Code / Cursor 等通用编码智能体。
     \end{exampleblock}
     \begin{exampleblock}{\cn{3} 攻防协同演化评测基准}
-        构建含\textbf{未知攻击留出集}的评测,量化对已知 / 未知攻击的\textbf{防御效果、误报与开销}。
+        构建含\textbf{预留的未知攻击}的评测,量化对已知 / 未知攻击的\textbf{防御效果、误报与开销}。
     \end{exampleblock}
 \end{frame}
 
