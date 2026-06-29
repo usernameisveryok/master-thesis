@@ -218,25 +218,16 @@
     \end{itemize}
 \end{frame}
 
-\begin{frame}{四项关键挑战}
-    \begin{columns}[T]
-        \begin{column}{0.5\textwidth}
-            \begin{alertblock}{\cn{1} 可靠性}
-                智能体编写的内核代码若含缺陷，可能直接\textbf{断网}或\textbf{误杀}正常流量——必须确保“先验证安全、后部署”。
-            \end{alertblock}
-            \begin{alertblock}{\cn{2} 探索高效性}
-                协议状态空间\textbf{巨大且充满噪声}，如何高效发现\textbf{真正有价值}的攻击面，而非无效扰动？
-            \end{alertblock}
-        \end{column}
-        \begin{column}{0.5\textwidth}
-            \begin{alertblock}{\cn{3} 非梯度演化的收敛性}
-                防御以\textbf{代码}为载体演化，如何保证其\textbf{单调进化}、不腐化、不回退（避免灾难性遗忘）？
-            \end{alertblock}
-            \begin{alertblock}{\cn{4} 评测}
-                如何\textbf{量化}系统对\textbf{未知攻击}的自主防御能力，给出可复现、可对比的度量？
-            \end{alertblock}
-        \end{column}
-    \end{columns}
+\begin{frame}{关键挑战(工程上)}
+    \begin{alertblock}{\cn{1} 可靠性}
+        智能体写的内核代码若有缺陷,可能直接\textbf{断网}或\textbf{误杀}正常流量——必须做到“先验证安全、再上线,出错能回滚”。
+    \end{alertblock}
+    \begin{alertblock}{\cn{2} 生成质量}
+        智能体写的 eBPF 要真能\textbf{编得过、过 verifier、且确实拦住攻击而不误杀}——这是系统能不能用的关键。
+    \end{alertblock}
+    \begin{alertblock}{\cn{3} 评测}
+        怎么\textbf{证明真的有用}:不仅防住见过的攻击,对\textbf{没见过的新攻击}也能防,且开销可接受。
+    \end{alertblock}
 \end{frame}
 
 
@@ -260,36 +251,19 @@
     \end{block}
 \end{frame}
 
-\begin{frame}{相关工作（二）：大模型用于安全 与 方法论基础}
-    \begin{columns}[T]
-        \begin{column}{0.52\textwidth}
-            \begin{block}{大模型 $\times$ 安全}
-                \begin{itemize}
-                    \item \textbf{进攻}：PentestGPT\supercite{deng2024pentestgpt}、Big Sleep\supercite{glazunov2024naptime}
-                    \item \textbf{合成 eBPF}：\alert{Kgent / KEN}\supercite{yang2024kgent}——由自然语言合成 eBPF，是\textbf{最直接的对比基线}
-                    \begin{itemize}
-                        \item 局限：\textbf{一次性合成}，\textbf{非自主、持续维护}
-                    \end{itemize}
-                    \item \textbf{工程载体}：Claude Code / Cursor / Codex / Devin / SWE-agent\supercite{anthropic2025claudecode,cursor2024,yang2024sweagent}——\textbf{通用而非领域专用}，需专门 harness
-                \end{itemize}
-            \end{block}
-        \end{column}
-        \begin{column}{0.48\textwidth}
-            \begin{block}{方法论基础}
-                \begin{itemize}
-                    \item 非梯度演化范式\supercite{weng2026hl}
-                    \item 程序演化搜索：FunSearch\supercite{romeraparedes2024funsearch}、AlphaEvolve\supercite{novikov2025alphaevolve}
-                    \item 自演化智能体：Darwin-G\"odel Machine\supercite{zhang2025dgm}
-                    \item 探索机制：ICM\supercite{pathak2017icm}、RND\supercite{burda2019rnd}（基于预测误差与新颖性）
-                    \item 多样化解集：Novelty Search\supercite{lehman2011novelty}、MAP-Elites\supercite{mouret2015mapelites}
-                \end{itemize}
-            \end{block}
-        \end{column}
-    \end{columns}
-    \vspace{0.2em}
-    \begin{center}
-        \footnotesize\color{thugray}上述方法论共同支撑“以可验证代码为载体的非梯度演化”。
-    \end{center}
+\begin{frame}{相关工作（二）：大模型用于安全 / 编码智能体}
+    \begin{block}{大模型 $\times$ 安全}
+        \begin{itemize}
+            \item \textbf{进攻}：PentestGPT\supercite{deng2024pentestgpt}、Big Sleep\supercite{glazunov2024naptime}
+            \item \textbf{合成 eBPF}：\alert{Kgent / KEN}\supercite{yang2024kgent}——由自然语言合成 eBPF,是\textbf{最直接的对比基线};但\textbf{一次性合成、不持续维护}
+        \end{itemize}
+    \end{block}
+    \begin{block}{编码智能体(工程载体)}
+        \begin{itemize}
+            \item Claude Code / Cursor / Codex / Devin / SWE-agent\supercite{anthropic2025claudecode,cursor2024,yang2024sweagent}:已能自主写改调代码,但\textbf{通用、不带内核 / eBPF 领域工具}——本文为此做\textbf{专用 harness}
+            \item 迭代思路可借鉴 FunSearch、AlphaEvolve\supercite{romeraparedes2024funsearch,novikov2025alphaevolve}(让模型反复改代码、用测试反馈迭代)
+        \end{itemize}
+    \end{block}
 \end{frame}
 
 \begin{frame}{定位对比：本文与代表性工作}
@@ -317,40 +291,27 @@
 \section{研究内容与方法}
 % =====================================================
 
-\begin{frame}{核心思路：防御演化（Defensive Evolution）}
-    \begin{block}{什么是“防御演化”}
-        让编码智能体\textbf{持续维护并演化}一套运行在内核的防御代码:把防御能力沉淀为\textbf{可验证的 eBPF 代码}(而不是模型权重),随攻击的出现不断增补、修正。
+\begin{frame}{总体思路：让智能体持续维护内核 eBPF 防御}
+    \begin{block}{做法}
+        把“\textbf{发现攻击 → 写/改 eBPF → 验证安全 → 加载 → 看效果 → 再改}”做成一个\textbf{自动闭环};防御以 \textbf{eBPF 代码}的形式不断积累在“防御库”里(项目内部也称“防御演化”)。
     \end{block}
     \vspace{0.2em}
-    \begin{columns}[T]
-        \begin{column}{0.5\textwidth}
-            \textbf{以可验证代码为载体的优势：}
-            \begin{itemize}
-                \item 容量\textbf{无界}（不受参数量限制）
-                \item 抗\textbf{灾难性遗忘}（旧防御不被覆盖）
-                \item \textbf{可解释}（每条防御对应一段代码）
-            \end{itemize}
-        \end{column}
-        \begin{column}{0.5\textwidth}
-            \vspace{1.6em}
-            \begin{itemize}
-                \item \textbf{线速}执行（XDP 数据面）
-                \item 可\textbf{形式化验证}（verifier 背书）
-            \end{itemize}
-        \end{column}
-    \end{columns}
+    \begin{block}{为什么用“代码”而不是训练一个模型}
+        \begin{itemize}
+            \item 改一条、加一条,\textbf{可积累、不遗忘};每条防御就是一段代码,\textbf{看得懂、可审计}
+            \item 跑在 XDP,\textbf{线速};出错能\textbf{回滚},verifier 保证\textbf{不把内核搞挂}
+        \end{itemize}
+    \end{block}
 \end{frame}
 
-\begin{frame}{四项研究内容}
-    \begin{enumerate}\itemsep=0.5em
-        \item \textbf{范式形式化 + 系统框架 + 专用 harness}\\
-        \footnotesize\color{thugray}界定“以可验证代码为载体的演化”;把 eBPF 工具、verifier 反馈、沙箱、靶场、档案封装成智能体的工具接口。\normalsize\par
-        \item \textbf{攻击面探索}\\
-        \footnotesize\color{thugray}以新颖性与覆盖度为信号,发现现有防御覆盖不到的攻击。\normalsize\par
-        \item \textbf{进化式 eBPF 合成 + 可信加载闭环}\\
-        \footnotesize\color{thugray}大模型生成 / 改写 eBPF,经多层验证后热加载到内核。\normalsize\par
-        \item \textbf{防御库维护 + 攻防协同演化评测}\\
-        \footnotesize\color{thugray}沉淀多样化防御,量化对已知 / 未知攻击的防御效果。\normalsize\par
+\begin{frame}{研究内容(三项,落在系统上)}
+    \begin{enumerate}\itemsep=0.8em
+        \item \textbf{把系统搭起来:智能体 + eBPF 工具链闭环}\\
+        \footnotesize\color{thugray}在 PacketScope/Guarder 基础上,做一套让智能体能“生成 eBPF → 编译 → 过 verifier → 沙箱测试 → 加载 → 读遥测”的工具与闭环。\normalsize\par
+        \item \textbf{让智能体写出“能用且安全”的 eBPF}\\
+        \footnotesize\color{thugray}解决生成质量(编得过、过 verifier、不误杀)与安全(出错自动回滚)——这是系统能真正跑起来的关键工程。\normalsize\par
+        \item \textbf{在真实协议攻击上做防御 + 评测}\\
+        \footnotesize\color{thugray}用 PMTUD / NAT / IPID 等真实攻击搭靶场,让系统自动生成防御;测检出率、误报率、性能开销,并与人工规则 / 现有工具对比。\normalsize\par
     \end{enumerate}
 \end{frame}
 
@@ -416,7 +377,7 @@
                    fill=thupurple!8, align=center, text width=3.0cm, minimum height=2.05cm,
                    drop shadow={shadow xshift=1.4pt, shadow yshift=-1.4pt, opacity=0.25, fill=thupurple!40}},
         fa/.style={-{Stealth[length=3.6mm,width=3mm]}, line width=1.5pt, draw=thupurple, line cap=round}]
-        \node[st] (s1) {\cn{1}\\[3pt]\textbf{攻击面探索}\\[2pt]\scriptsize 新颖性 · 覆盖度引导};
+        \node[st] (s1) {\cn{1}\\[3pt]\textbf{攻击面探索}\\[2pt]\scriptsize 找防御漏掉的};
         \node[st, right=1.1cm of s1] (s2) {\cn{2}\\[3pt]\textbf{防御合成}\\[2pt]\scriptsize 大模型生成 · 改写 eBPF};
         \node[st, right=1.1cm of s2] (s3) {\cn{3}\\[3pt]\textbf{可信验证}\\[2pt]\scriptsize 编译 · verifier · 沙箱};
         \node[st, right=1.1cm of s3] (s4) {\cn{4}\\[3pt]\textbf{部署与反馈}\\[2pt]\scriptsize 热加载 · 运行时遥测};
@@ -426,7 +387,7 @@
             node[midway, above, font=\scriptsize, text=thupurple!80] {验证失败 $\to$ 自修正};
         \draw[fa] (s5.south) -- ++(0,-1.05)
             -| node[pos=0.25, below, font=\scriptsize, text=thupurple]
-            {运行时反馈 / 新颖性回灌（非梯度、持续演化）} (s1.south);
+            {运行时反馈 → 下一轮迭代} (s1.south);
     \end{tikzpicture}}
     \end{center}
     \vspace{2pt}
@@ -471,26 +432,26 @@
     \end{center}
 \end{frame}
 
-\begin{frame}{评测设计：攻防协同演化}
-    \begin{block}{评测方式}
-        红队与防御系统\textbf{协同演化};攻击集分为\textbf{训练种子}与\textbf{预留的未知攻击},考察无人工补丁介入下的自主防御。
+\begin{frame}{怎么评测}
+    \begin{block}{思路}
+        用\textbf{真实协议攻击}搭靶场,让系统自动生成防御,看它\textbf{防得住、误杀少、开销小};并对“\textbf{没让它见过的新攻击}”单独测一遍。
     \end{block}
     \begin{columns}[T]
         \begin{column}{0.52\textwidth}
-            \textbf{度量指标}
+            \textbf{看四个指标}
             \begin{itemize}
-                \item 已知攻击:\textbf{检出率 / 误报率}
-                \item 未知攻击(预留测试):随迭代的\textbf{防御覆盖提升}
-                \item 性能:XDP \textbf{吞吐损失 / 时延}
-                \item \textbf{自动化程度}(人工介入量)
+                \item 防住没:\textbf{检出率}
+                \item 误杀多少:\textbf{误报率}
+                \item 开销:XDP \textbf{吞吐 / 时延}
+                \item 要不要人工:\textbf{自动化程度}
             \end{itemize}
         \end{column}
         \begin{column}{0.48\textwidth}
-            \textbf{对比与消融}
+            \textbf{跟谁比}
             \begin{itemize}
+                \item 人工写的规则(现状)
                 \item Kgent / KEN(一次性合成)
                 \item Tetragon / Falco(人工策略)
-                \item 消融:去探索 / 去档案 / 去自修正
             \end{itemize}
         \end{column}
     \end{columns}
@@ -502,14 +463,14 @@
 % =====================================================
 
 \begin{frame}{创新点}
-    \begin{exampleblock}{\cn{1} 范式}
-        让编码智能体\textbf{持续维护与演化}内核防御代码——防御沉淀为“\textbf{可验证代码}”而非模型权重(即\textbf{防御演化})。
+    \begin{exampleblock}{\cn{1} 一套能跑起来的系统(而非设想)}
+        在 PacketScope/Guarder 上落地:让编码智能体\textbf{自动维护}一套内核 eBPF 防御,可演示、可复现。
     \end{exampleblock}
-    \begin{exampleblock}{\cn{2} 专用 harness}
-        为内核 eBPF 防御构建\textbf{领域专用的智能体 harness}(领域工具 + 反馈闭环),而非直接套用 Claude Code / Cursor 等通用编码智能体。
+    \begin{exampleblock}{\cn{2} 智能体写内核代码的可靠流水线}
+        生成 → 编译 → verifier → 沙箱 → 加载 → 回滚,保证“AI 写的 eBPF”\textbf{能用、且不把内核搞挂}。
     \end{exampleblock}
-    \begin{exampleblock}{\cn{3} 攻防协同演化评测基准}
-        构建含\textbf{预留的未知攻击}的评测,量化对已知 / 未知攻击的\textbf{防御效果、误报与开销}。
+    \begin{exampleblock}{\cn{3} 真实攻击的防御 + 评测靶场}
+        用 PMTUD / NAT / IPID 等真实攻击,给出\textbf{检出率 / 误报 / 开销},并与人工规则、现有工具对比。
     \end{exampleblock}
 \end{frame}
 
