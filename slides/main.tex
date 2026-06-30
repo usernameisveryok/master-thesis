@@ -70,7 +70,7 @@
         \tableofcontents[sections={1-4},sectionstyle=show/shaded,subsectionstyle=hide]
       \end{column}
       \begin{column}{0.5\textwidth}
-        \tableofcontents[sections={5-8},sectionstyle=show/shaded,subsectionstyle=hide]
+        \tableofcontents[sections={5-7},sectionstyle=show/shaded,subsectionstyle=hide]
       \end{column}
     \end{columns}
   \end{frame}
@@ -96,7 +96,7 @@
         \tableofcontents[sections={1-4},subsectionstyle=hide]
       \end{column}
       \begin{column}{0.5\textwidth}
-        \tableofcontents[sections={5-8},subsectionstyle=hide]
+        \tableofcontents[sections={5-7},subsectionstyle=hide]
       \end{column}
     \end{columns}
 \end{frame}
@@ -218,7 +218,7 @@
     \end{itemize}
 \end{frame}
 
-\begin{frame}{关键挑战(工程层面)}
+\begin{frame}{关键挑战}
     \begin{alertblock}{\cn{1} 可靠性}
         智能体生成的内核代码若存在缺陷,可能导致网络中断或误伤正常流量——须做到“先验证安全、再上线,异常可回滚”。
     \end{alertblock}
@@ -304,12 +304,10 @@
     \end{block}
 \end{frame}
 
-\begin{frame}{主要研究内容(三项)}
-    \begin{enumerate}\itemsep=0.8em
-        \item \textbf{系统构建:智能体与 eBPF 工具链闭环}\\
-        \footnotesize\color{thugray}在 PacketScope/Guarder 基础上,构建使智能体能够完成“生成 eBPF → 编译 → 通过 verifier → 沙箱测试 → 加载 → 读取遥测”的工具链与自动化闭环。\normalsize\par
-        \item \textbf{生成“可用且安全”的 eBPF 防御}\\
-        \footnotesize\color{thugray}解决生成质量(可编译、通过 verifier、不误伤正常流量)与运行安全(异常时自动回滚)——这是系统得以运行的关键工程。\normalsize\par
+\begin{frame}{主要研究内容(两项)}
+    \begin{enumerate}\itemsep=1.0em
+        \item \textbf{一套完整的专用 harness}\\
+        \footnotesize\color{thugray}将“由编码智能体生成 eBPF 防御并保证其可用、安全”的全过程,封装为一套完整的领域专用 harness:涵盖防御程序的生成、编译、内核 verifier 校验、沙箱测试、加载与运行时反馈;并解决生成质量(可编译、通过 verifier、不误伤正常流量)与运行安全(异常时自动回滚)。\normalsize\par
         \item \textbf{面向真实协议攻击的防御与评测}\\
         \footnotesize\color{thugray}以 PMTUD / NAT / IPID 等真实攻击构建攻防靶场,由系统自动生成防御;度量检测率、误报率与性能开销,并与人工规则及现有工具对比。\normalsize\par
     \end{enumerate}
@@ -455,23 +453,6 @@
             \end{itemize}
         \end{column}
     \end{columns}
-\end{frame}
-
-
-% =====================================================
-\section{创新点}
-% =====================================================
-
-\begin{frame}{创新点}
-    \begin{exampleblock}{\cn{1} 可运行的系统原型(而非概念设想)}
-        在 PacketScope/Guarder 上落地:由编码智能体\textbf{自动维护}一套内核 eBPF 防御,可演示、可复现。
-    \end{exampleblock}
-    \begin{exampleblock}{\cn{2} 智能体编写内核代码的可靠流水线}
-        生成 → 编译 → verifier → 沙箱 → 加载 → 回滚,保证\textbf{智能体生成的 eBPF}可用,且不致引发内核崩溃。
-    \end{exampleblock}
-    \begin{exampleblock}{\cn{3} 面向真实协议攻击的防御评测靶场}
-        以 PMTUD / NAT / IPID 等真实攻击,给出\textbf{检测率 / 误报 / 开销},并与人工规则、现有工具对比。
-    \end{exampleblock}
 \end{frame}
 
 
