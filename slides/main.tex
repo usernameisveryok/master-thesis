@@ -160,7 +160,7 @@
             \begin{block}{\cn{3} 依赖人工编写内核代码}
                 \begin{itemize}
                     \item 内核协议栈改动\textbf{周期长}：评审、回归、上线缓慢
-                    \item \textbf{易出错}：一处缺陷即可断网或误杀正常流量
+                    \item \textbf{易出错}：一处缺陷即可导致网络中断或误伤正常流量
                     \item 知识\textbf{难以沉淀}：经验留存于个人，复用困难
                 \end{itemize}
             \end{block}
@@ -218,15 +218,15 @@
     \end{itemize}
 \end{frame}
 
-\begin{frame}{关键挑战(工程上)}
+\begin{frame}{关键挑战(工程层面)}
     \begin{alertblock}{\cn{1} 可靠性}
-        智能体写的内核代码若有缺陷,可能直接\textbf{断网}或\textbf{误杀}正常流量——必须做到“先验证安全、再上线,出错能回滚”。
+        智能体生成的内核代码若存在缺陷,可能导致网络中断或误伤正常流量——须做到“先验证安全、再上线,异常可回滚”。
     \end{alertblock}
     \begin{alertblock}{\cn{2} 生成质量}
-        智能体写的 eBPF 要真能\textbf{编得过、过 verifier、且确实拦住攻击而不误杀}——这是系统能不能用的关键。
+        智能体生成的 eBPF 须能\textbf{编译通过、通过内核 verifier},并有效拦截目标攻击而不误伤正常流量——这决定系统是否可用。
     \end{alertblock}
     \begin{alertblock}{\cn{3} 评测}
-        怎么\textbf{证明真的有用}:不仅防住见过的攻击,对\textbf{没见过的新攻击}也能防,且开销可接受。
+        如何\textbf{验证其有效性}:对\textbf{已知与未知}攻击均能防御,且性能开销可控。
     \end{alertblock}
 \end{frame}
 
@@ -260,8 +260,8 @@
     \end{block}
     \begin{block}{编码智能体(工程载体)}
         \begin{itemize}
-            \item Claude Code / Cursor / Codex / Devin / SWE-agent\supercite{anthropic2025claudecode,cursor2024,yang2024sweagent}:已能自主写改调代码,但\textbf{通用、不带内核 / eBPF 领域工具}——本文为此做\textbf{专用 harness}
-            \item 迭代思路可借鉴 FunSearch、AlphaEvolve\supercite{romeraparedes2024funsearch,novikov2025alphaevolve}(让模型反复改代码、用测试反馈迭代)
+            \item Claude Code / Cursor / Codex / Devin / SWE-agent\supercite{anthropic2025claudecode,cursor2024,yang2024sweagent}:已能自主编写、修改与调试代码,但属\textbf{通用工具、不含内核 / eBPF 领域能力}——本文为此设计\textbf{专用 harness}
+            \item 迭代思路可借鉴 FunSearch、AlphaEvolve\supercite{romeraparedes2024funsearch,novikov2025alphaevolve}(以测试反馈驱动模型反复修改代码)
         \end{itemize}
     \end{block}
 \end{frame}
@@ -291,27 +291,27 @@
 \section{研究内容与方法}
 % =====================================================
 
-\begin{frame}{总体思路：让智能体持续维护内核 eBPF 防御}
-    \begin{block}{做法}
-        把“\textbf{发现攻击 → 写/改 eBPF → 验证安全 → 加载 → 看效果 → 再改}”做成一个\textbf{自动闭环};防御以 \textbf{eBPF 代码}的形式不断积累在“防御库”里(项目内部也称“防御演化”)。
+\begin{frame}{总体思路：由智能体持续维护内核 eBPF 防御}
+    \begin{block}{基本做法}
+        将“\textbf{发现攻击 → 生成/修改 eBPF → 验证安全 → 加载 → 评估效果 → 迭代}”组织为一个\textbf{自动化闭环};防御能力以 \textbf{eBPF 代码}的形式持续积累于“防御库”中(本文称之为“防御演化”)。
     \end{block}
     \vspace{0.2em}
-    \begin{block}{为什么用“代码”而不是训练一个模型}
+    \begin{block}{为何以代码(而非模型权重)为载体}
         \begin{itemize}
-            \item 改一条、加一条,\textbf{可积累、不遗忘};每条防御就是一段代码,\textbf{看得懂、可审计}
-            \item 跑在 XDP,\textbf{线速};出错能\textbf{回滚},verifier 保证\textbf{不把内核搞挂}
+            \item 逐条增补与修正,\textbf{可累积、不遗忘};每条防御对应一段代码,\textbf{可读、可审计}
+            \item 运行于 XDP,\textbf{线速执行};出错可\textbf{回滚},并由 verifier 保证\textbf{不致内核崩溃}
         \end{itemize}
     \end{block}
 \end{frame}
 
-\begin{frame}{研究内容(三项,落在系统上)}
+\begin{frame}{主要研究内容(三项)}
     \begin{enumerate}\itemsep=0.8em
-        \item \textbf{把系统搭起来:智能体 + eBPF 工具链闭环}\\
-        \footnotesize\color{thugray}在 PacketScope/Guarder 基础上,做一套让智能体能“生成 eBPF → 编译 → 过 verifier → 沙箱测试 → 加载 → 读遥测”的工具与闭环。\normalsize\par
-        \item \textbf{让智能体写出“能用且安全”的 eBPF}\\
-        \footnotesize\color{thugray}解决生成质量(编得过、过 verifier、不误杀)与安全(出错自动回滚)——这是系统能真正跑起来的关键工程。\normalsize\par
-        \item \textbf{在真实协议攻击上做防御 + 评测}\\
-        \footnotesize\color{thugray}用 PMTUD / NAT / IPID 等真实攻击搭靶场,让系统自动生成防御;测检出率、误报率、性能开销,并与人工规则 / 现有工具对比。\normalsize\par
+        \item \textbf{系统构建:智能体与 eBPF 工具链闭环}\\
+        \footnotesize\color{thugray}在 PacketScope/Guarder 基础上,构建使智能体能够完成“生成 eBPF → 编译 → 通过 verifier → 沙箱测试 → 加载 → 读取遥测”的工具链与自动化闭环。\normalsize\par
+        \item \textbf{生成“可用且安全”的 eBPF 防御}\\
+        \footnotesize\color{thugray}解决生成质量(可编译、通过 verifier、不误伤正常流量)与运行安全(异常时自动回滚)——这是系统得以运行的关键工程。\normalsize\par
+        \item \textbf{面向真实协议攻击的防御与评测}\\
+        \footnotesize\color{thugray}以 PMTUD / NAT / IPID 等真实攻击构建攻防靶场,由系统自动生成防御;度量检测率、误报率与性能开销,并与人工规则及现有工具对比。\normalsize\par
     \end{enumerate}
 \end{frame}
 
@@ -377,7 +377,7 @@
                    fill=thupurple!8, align=center, text width=3.0cm, minimum height=2.05cm,
                    drop shadow={shadow xshift=1.4pt, shadow yshift=-1.4pt, opacity=0.25, fill=thupurple!40}},
         fa/.style={-{Stealth[length=3.6mm,width=3mm]}, line width=1.5pt, draw=thupurple, line cap=round}]
-        \node[st] (s1) {\cn{1}\\[3pt]\textbf{攻击面探索}\\[2pt]\scriptsize 找防御漏掉的};
+        \node[st] (s1) {\cn{1}\\[3pt]\textbf{攻击面探索}\\[2pt]\scriptsize 发现未覆盖的攻击};
         \node[st, right=1.1cm of s1] (s2) {\cn{2}\\[3pt]\textbf{防御合成}\\[2pt]\scriptsize 大模型生成 · 改写 eBPF};
         \node[st, right=1.1cm of s2] (s3) {\cn{3}\\[3pt]\textbf{可信验证}\\[2pt]\scriptsize 编译 · verifier · 沙箱};
         \node[st, right=1.1cm of s3] (s4) {\cn{4}\\[3pt]\textbf{部署与反馈}\\[2pt]\scriptsize 热加载 · 运行时遥测};
@@ -432,24 +432,24 @@
     \end{center}
 \end{frame}
 
-\begin{frame}{怎么评测}
+\begin{frame}{评测方法}
     \begin{block}{思路}
-        用\textbf{真实协议攻击}搭靶场,让系统自动生成防御,看它\textbf{防得住、误杀少、开销小};并对“\textbf{没让它见过的新攻击}”单独测一遍。
+        以\textbf{真实协议攻击}构建攻防靶场,由系统自动生成防御,考察其\textbf{检测率、误报率与性能开销};并对\textbf{未参与迭代的未知攻击}单独评测。
     \end{block}
     \begin{columns}[T]
         \begin{column}{0.52\textwidth}
-            \textbf{看四个指标}
+            \textbf{度量指标}
             \begin{itemize}
-                \item 防住没:\textbf{检出率}
-                \item 误杀多少:\textbf{误报率}
-                \item 开销:XDP \textbf{吞吐 / 时延}
-                \item 要不要人工:\textbf{自动化程度}
+                \item 检测率(是否成功拦截)
+                \item 误报率(误伤正常流量)
+                \item 性能开销(XDP 吞吐 / 时延)
+                \item 自动化程度(人工介入量)
             \end{itemize}
         \end{column}
         \begin{column}{0.48\textwidth}
-            \textbf{跟谁比}
+            \textbf{对比基线}
             \begin{itemize}
-                \item 人工写的规则(现状)
+                \item 人工编写的规则(现状)
                 \item Kgent / KEN(一次性合成)
                 \item Tetragon / Falco(人工策略)
             \end{itemize}
@@ -463,14 +463,14 @@
 % =====================================================
 
 \begin{frame}{创新点}
-    \begin{exampleblock}{\cn{1} 一套能跑起来的系统(而非设想)}
-        在 PacketScope/Guarder 上落地:让编码智能体\textbf{自动维护}一套内核 eBPF 防御,可演示、可复现。
+    \begin{exampleblock}{\cn{1} 可运行的系统原型(而非概念设想)}
+        在 PacketScope/Guarder 上落地:由编码智能体\textbf{自动维护}一套内核 eBPF 防御,可演示、可复现。
     \end{exampleblock}
-    \begin{exampleblock}{\cn{2} 智能体写内核代码的可靠流水线}
-        生成 → 编译 → verifier → 沙箱 → 加载 → 回滚,保证“AI 写的 eBPF”\textbf{能用、且不把内核搞挂}。
+    \begin{exampleblock}{\cn{2} 智能体编写内核代码的可靠流水线}
+        生成 → 编译 → verifier → 沙箱 → 加载 → 回滚,保证\textbf{智能体生成的 eBPF}可用,且不致引发内核崩溃。
     \end{exampleblock}
-    \begin{exampleblock}{\cn{3} 真实攻击的防御 + 评测靶场}
-        用 PMTUD / NAT / IPID 等真实攻击,给出\textbf{检出率 / 误报 / 开销},并与人工规则、现有工具对比。
+    \begin{exampleblock}{\cn{3} 面向真实协议攻击的防御评测靶场}
+        以 PMTUD / NAT / IPID 等真实攻击,给出\textbf{检测率 / 误报 / 开销},并与人工规则、现有工具对比。
     \end{exampleblock}
 \end{frame}
 
